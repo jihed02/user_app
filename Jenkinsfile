@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Clone Git Repository') {
             steps {
-                git 'https://github.com/ton-repo/ton-application.git'  // URL de ton dépôt Git
+                git 'https://github.com/jihed02/user_app.git'  // URL de ton dépôt Git
             }
         }
 
