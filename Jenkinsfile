@@ -21,9 +21,9 @@ pipeline {
         stage('Build with Maven') {
             steps {
                 script {
-                    withMaven(maven: 'maven-3.9.9') {
+
                         sh 'mvn clean install'
-                    }
+
                 }
             }
         }
