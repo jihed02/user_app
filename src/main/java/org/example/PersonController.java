@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/Persons")
+@RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
 public class PersonController {
 
@@ -17,7 +17,7 @@ public class PersonController {
     }
 
     @GetMapping
-    public List<Person> getAllPersons() {
+    public List<Person> getPersons() {
         return service.getAllPersons();
     }
 
