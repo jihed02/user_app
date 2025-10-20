@@ -2,22 +2,28 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_CREDENTIALS = credentials('jihed02-dockerhub')  // ID des credentials Docker Hub dans Jenkins
-        IMAGE_NAME = 'application-app'  // Le nom de l'image Docker
-        IMAGE_TAG = "${env.BUILD_ID}"  // Tag basé sur l'ID de build Jenkins
+        DOCKER_HUB_CREDENTIALS = credentials('jihed02-dockerhub')
+        IMAGE_NAME = 'application-app'
+        IMAGE_TAG = "${env.BUILD_ID}"
+    }
+
+    tools {
+        maven 'Maven 3.9.9'  // Use the configured Maven installation
     }
 
     stages {
         stage('Clone Git Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/jihed02/user_app.git'  // Update branch to 'main'
+                git branch: 'main', url: 'https://github.com/jihed02/user_app.git'
             }
         }
 
         stage('Build with Maven') {
             steps {
                 script {
-                    sh 'mvn clean install'  // Exécution de Maven pour construire l'application
+                    withMaven(maven: 'Maven 3.9.9') {
+                        sh 'mvn clean install'
+                    }
                 }
             }
         }
@@ -25,7 +31,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker build -t ${DOCKER_HUB_CREDENTIALS_USR}/${IMAGE_NAME}:${IMAGE_TAG} .'  // Construction de l'image Docker
+                    sh 'docker build -t ${DOCKER_HUB_CREDENTIALS_USR}/${IMAGE_NAME}:${IMAGE_TAG} .'
                 }
             }
         }
@@ -34,8 +40,8 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin'  // Connexion à Docker Hub
-                        sh 'docker push ${DOCKER_HUB_CREDENTIALS_USR}/${IMAGE_NAME}:${IMAGE_TAG}'  // Publication sur Docker Hub
+                        sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin'
+                        sh 'docker push ${DOCKER_HUB_CREDENTIALS_USR}/${IMAGE_NAME}:${IMAGE_TAG}'
                     }
                 }
             }
