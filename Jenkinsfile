@@ -8,7 +8,7 @@ pipeline {
     }
 
     tools {
-        maven 'Maven 3.9.9'  // Use the configured Maven installation
+        maven 'maven-3.9.9'  // Use the configured Maven installation
     }
 
     stages {
@@ -21,9 +21,9 @@ pipeline {
         stage('Build with Maven') {
             steps {
                 script {
-
+                    withMaven(maven: 'maven-3.9.9') {
                         sh 'mvn clean install'
-
+                    }
                 }
             }
         }
