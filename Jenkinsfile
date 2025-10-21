@@ -32,7 +32,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh "docker build -t jihedbenamara02/${IMAGE_NAME}:${IMAGE_TAG} ."
+                    sh "docker build -t jihedbenamara10/${IMAGE_NAME}:${IMAGE_TAG} ."
                 }
             }
         }
@@ -43,7 +43,7 @@ pipeline {
                     // Hardcoded Docker login and push
                     sh """
                         echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USER --password-stdin
-                        docker push jihedbenamara02/${IMAGE_NAME}:${IMAGE_TAG}
+                        docker push jihedbenamara10/${IMAGE_NAME}:${IMAGE_TAG}
                     """
                 }
             }
