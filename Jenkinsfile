@@ -43,6 +43,11 @@ pipeline {
                         usernameVariable: 'DOCKER_USER',
                         passwordVariable: 'DOCKER_PASSWORD'
                     )]) {
+                        // Debugging: Print Docker username and password (only for verification)
+                        echo "Docker Username: \$DOCKER_USER"
+                        echo "Docker Password: \$DOCKER_PASSWORD"  // Be cautious with printing sensitive data
+
+                        // Docker login and push
                         sh """
                             echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USER --password-stdin
                             docker push jihedbenamara10/${IMAGE_NAME}:${IMAGE_TAG}
