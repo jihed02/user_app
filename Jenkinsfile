@@ -1,12 +1,10 @@
 pipeline {
     agent any
 
-      environment {
-            IMAGE_NAME = 'application-app'
-            IMAGE_TAG = "${env.BUILD_ID}"
-            DOCKER_USER = 'jihedbenamara10'  // Docker Hub username
-            DOCKER_PASSWORD = credentials('dockerhub-token')  // Jenkins secret for Docker token
-        }
+    environment {
+        IMAGE_NAME = 'application-app'
+        IMAGE_TAG = "${env.BUILD_ID}"
+    }
 
     tools {
         maven 'maven-3.9.9'
