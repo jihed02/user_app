@@ -4,6 +4,8 @@ pipeline {
     environment {
         IMAGE_NAME = 'application-app'
         IMAGE_TAG = "${env.BUILD_ID}"
+        DOCKER_USER = 'jihedbenamara10'  // Hardcoded Docker username
+        DOCKER_PASSWORD = 'dckr_pat_184CyJLBLdYYr_vdKrcve31TZqw'  // Hardcoded Docker password (token)
     }
 
     tools {
@@ -38,21 +40,11 @@ pipeline {
         stage('Publish to Docker Hub') {
             steps {
                 script {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'jihed02-dockerhub',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASSWORD'
-                    )]) {
-                        // Debugging: Print Docker username and password (only for verification)
-                        echo "Docker Username: \$DOCKER_USER"
-                        echo "Docker Password: \$DOCKER_PASSWORD"  // Be cautious with printing sensitive data
-
-                        // Docker login and push
-                        sh """
-                            echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USER --password-stdin
-                            docker push jihedbenamara10/${IMAGE_NAME}:${IMAGE_TAG}
-                        """
-                    }
+                    // Hardcoded Docker login and push
+                    sh """
+                        echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USER --password-stdin
+                        docker push jihedbenamara10/${IMAGE_NAME}:${IMAGE_TAG}
+                    """
                 }
             }
         }
