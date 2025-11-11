@@ -1,18 +1,10 @@
 pipeline {
     agent any
-
     environment {
-        IMAGE_NAME = 'application-app'
-        IMAGE_TAG = "${env.BUILD_ID}"
-        DOCKER_REGISTRY = 'jihedbenamara10'
+        DOCKER_IMAGE = 'jihedbenamara10/application-app'
     }
-
-    tools {
-        maven 'maven-3.9.9'
-    }
-
     stages {
-        stage('Clone Git Repository') {
+        stage('Cloner le dépôt') {
             steps {
                 git branch: 'main', url: 'https://github.com/jihed02/user_app.git'
             }
@@ -21,9 +13,7 @@ pipeline {
         stage('Build with Maven') {
             steps {
                 script {
-                    withMaven(maven: 'maven-3.9.9') {
-                        sh 'mvn clean install'
-                    }
+                    sh 'mvn clean package'
                 }
             }
         }
@@ -31,57 +21,41 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh "docker build -t ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} ."
+                    sh "docker build -t ${DOCKER_IMAGE} ."
                 }
             }
         }
 
-        stage('Publish to Docker Hub') {
+        stage('Push Docker Image') {
             steps {
                 script {
                     withCredentials([usernamePassword(
-                        credentialsId: 'jihed02-dockerhub',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
                     )]) {
-                        sh """
-                            echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
-                            docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                        """
+                        sh "echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin"
+                        sh "docker push ${DOCKER_IMAGE}"
                     }
                 }
             }
         }
 
-        stage('Déployer sur Kubernetes') {
+        stage('Deploy on Kubernetes') {
             steps {
                 script {
-                    kubeconfig(caCertificate: '''MIIDBjCCAe6gAwIBAgIBATANBgkqhkiG9w0BAQsFADAVMRMwEQYDVQQDEwptaW5p
-                    a3ViZUNBMB4XDTI0MTIyNzE0MTkzNloXDTM0MTIyNjE0MTkzNlowFTETMBEGA1UE
-                    AxMKbWluaWt1YmVDQTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALa7
-                    49roGJoIrK/j3og8zRmhBdaxZwCJIcleMI6aQqahkmTFMAHI1RJKEg+QzQyzSxAH
-                    37oAisO6S3g8H2XH/hsilF1UyvD57NYhafz7v8UOLIn4t8UmTPLtX0S8txyO/yu8
-                    LAiSqN9lKs4ZraLp5EUIA7ojUjQOhcpYD2xq278Ka+23/GUDYtrpXMVBqrEtARG+
-                    0vcGS6eRG5JFP+yZJ/x/0EJgjhdQ7/Drm5pus3d6xy+Fj+5LpMpMORDQTqAoquUg
-                    Vpa/v9pBjiU2mgpGhUuEilcD8H/XSm5jcDnGeM8DAFP6gz7zOc7VeYvbfHdXEJ+0
-                    hpRIjDX9Mw/DowSLaCUCAwEAAaNhMF8wDgYDVR0PAQH/BAQDAgKkMB0GA1UdJQQW
-                    MBQGCCsGAQUFBwMCBggrBgEFBQcDATAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQW
-                    BBQ6TXMqzsYycTDFBh1EtuQvLwsB+DANBgkqhkiG9w0BAQsFAAOCAQEAnwqQPlJB
-                    1TntwjIWv0D+OK8C8ck5fkGPx+uFVImydTxwC9qhLrYUS8ST2zZGcMl8Fhfcfc+J
-                    XKPfOBa7ZJWIgy7wBdW3Dht4KNnN6y5iQYzOIQvVwP5m/1mKUKFNRBMBI/P6dvca
-                    giwnWIP+99/TBh2+qW66NoMxiUietAuZCPDfygJMCD8CX9NfuzLiB8JkE2NoDOP5
-                    LN1OdAMJpehUvNHdLSdNaQYiZ315ZTwZASolby9q9aQHr5dnMxGv+VQrL386i3OS
-                    GudMpbmqU5878VhUG/902qtnYBnS1K3KBb1ZowuhpGCoEVwPd5VudqM81NX8djh7
-                    RpO2XO1vxqujIQ==''', credentialsId: 'kubeconfig', serverUrl: 'https://127.0.0.1:54077') {
-                       sh 'kubectl apply -f deployment.yaml'
-                       sh 'kubectl apply -f service.yaml'
+                    withKubeConfig([
+                        credentialsId: 'kubernetes',
+                        caCertificate: 'MIIDBjCCAe6gAwIBAgIBATANBgkqhkiG9w0BAQsFADAVMRMwEQYDVQQDEwptaW5pa3ViZUNBMB4XDTI1MTExMDEyMDYyMVoXDTM1MTEwOTEyMDYyMVowFTETMBEGA1UEAxMKbWluaWt1YmVDQTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANkkv/nj/QhhJPEIgrcoETBxGI+9d7SRm/ygrVuvr6d5eJdoO7ozNK9qqELFY6QvAzZ+Pe04grnI8X1OHDWWYM3ZHoO1eGsNgiTkBQ+hMF6RdfxJ7C5ZqQxgdzLC0PdzHC4NvJusNRgcWjJRNFLYOuUEsqNFNB/FHklwauYKuN6F0EAHN5MG9B1P09Quy4vvKPodsPBYShqvffxsILmNwAWT1oSYO85qW4xSDr8WiZC7xqcSkZ8rbewZhTV9nWArjGTF6/n5q/Bje3qhkatARvXJjxCWgqSmRaDp1UuZHE/dLaGj8Rjh4yOpRXi+87861ZCkfWOCpMca5w6DNveYxFECAwEAAaNhMF8wDgYDVR0PAQH/BAQDAgKkMB0GA1UdJQQWMBQGCCsGAQUFBwMCBggrBgEFBQcDATAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBSdllwy/qr5S1eP2kd/av3S77p36DANBgkqhkiG9w0BAQsFAAOCAQEA0piIChlOSjM3kXRKvWAXCJenCfIZIsKTQSyT2vNvInH+RAwysr6C2ERamYWPBCdIJxauJNQoiYvaK8k+TwkgY/GlGIRjh16borIIRFu1+NnYCskT9tO7THzjb22QMTiuMUmEKijpiYBD2geXvdvzJuHFzbHZzzxoiBfHE/7nux/pBWtS9scqVKfushA/fXMvZrm7UjI/S/ixUkMOIjpje0zVq4RCb8BL6TrahC1XVxgJlNqrHgu+yWdEdheYLgoFLQuhqeRBZVeqrUkj/ReaSLtody+QOtU8MFPkcLSDVv7OCKm6UmzJIlVdyZWEdi8nIFwSZ+uHAf/Kbo1JQFwE3g==',
+                        serverUrl: 'https://127.0.0.1:62748'
+                    ]) {
+                        sh 'kubectl apply -f deployment.yaml'
+                        sh 'kubectl apply -f service.yaml'
                     }
-
                 }
             }
         }
     }
-
     post {
         success {
             echo 'Pipeline completed successfully!'
