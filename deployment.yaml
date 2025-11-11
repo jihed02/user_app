@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: mon-app
-          image: votre-dockerhub/mon-app
+          image: jihedbenamara10/application-app
           ports:
             - containerPort: 80
